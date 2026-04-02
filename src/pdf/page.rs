@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::{
-    ffi::CStr,
+    ffi::{c_int, CStr},
     mem::ManuallyDrop,
     ops::{Deref, DerefMut},
     ptr::NonNull,
@@ -16,7 +16,65 @@ use crate::pdf::{
     DocOperation, LinkAction, PdfAction, PdfAnnotation, PdfAnnotationType, PdfDestination,
     PdfDocument, PdfFilterOptions, PdfLink, PdfLinkAnnot, PdfObject,
 };
-use crate::{context, unsafe_impl_ffi_wrapper, Error, FFIWrapper, Matrix, Page, Rect};
+use crate::{context, from_enum, unsafe_impl_ffi_wrapper, Error, FFIWrapper, Matrix, Page, Rect};
+
+from_enum! { c_int => c_int,
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum PdfRedactImageMethod {
+        None = PDF_REDACT_IMAGE_NONE,
+        Remove = PDF_REDACT_IMAGE_REMOVE,
+        Pixels = PDF_REDACT_IMAGE_PIXELS,
+        RemoveUnlessInvisible = PDF_REDACT_IMAGE_REMOVE_UNLESS_INVISIBLE,
+    }
+}
+
+from_enum! { c_int => c_int,
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum PdfRedactLineArtMode {
+        None = PDF_REDACT_LINE_ART_NONE,
+        RemoveIfCovered = PDF_REDACT_LINE_ART_REMOVE_IF_COVERED,
+        RemoveIfTouched = PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED,
+    }
+}
+
+from_enum! { c_int => c_int,
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum PdfRedactTextMode {
+        Remove = PDF_REDACT_TEXT_REMOVE,
+        None = PDF_REDACT_TEXT_NONE,
+        RemoveInvisible = PDF_REDACT_TEXT_REMOVE_INVISIBLE,
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PdfRedactOptions {
+    pub black_boxes: bool,
+    pub image_method: PdfRedactImageMethod,
+    pub line_art: PdfRedactLineArtMode,
+    pub text: PdfRedactTextMode,
+}
+
+impl Default for PdfRedactOptions {
+    fn default() -> Self {
+        Self {
+            black_boxes: true,
+            image_method: PdfRedactImageMethod::Pixels,
+            line_art: PdfRedactLineArtMode::RemoveIfTouched,
+            text: PdfRedactTextMode::Remove,
+        }
+    }
+}
+
+impl PdfRedactOptions {
+    fn into_raw(self) -> pdf_redact_options {
+        pdf_redact_options {
+            black_boxes: if self.black_boxes { 1 } else { 0 },
+            image_method: self.image_method.into(),
+            line_art: self.line_art.into(),
+            text: self.text.into(),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct PdfPage {
@@ -84,7 +142,12 @@ impl PdfPage {
     }
 
     pub fn redact(&mut self) -> Result<bool, Error> {
-        unsafe { ffi_try!(mupdf_pdf_redact_page(context(), self.as_mut_ptr())) }
+        self.redact_with_options(PdfRedactOptions::default())
+    }
+
+    pub fn redact_with_options(&mut self, options: PdfRedactOptions) -> Result<bool, Error> {
+        let raw = options.into_raw();
+        unsafe { ffi_try!(mupdf_pdf_redact_page(context(), self.as_mut_ptr(), raw)) }
     }
 
     pub fn object(&self) -> PdfObject {

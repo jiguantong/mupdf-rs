@@ -16,7 +16,9 @@ pub use links::{
     DestPageResolver, FileSpec, LinkAction, PdfAction, PdfDestination, PdfLink, PdfLinkAnnot,
 };
 pub use object::PdfObject;
-pub use page::PdfPage;
+pub use page::{
+    PdfPage, PdfRedactImageMethod, PdfRedactLineArtMode, PdfRedactOptions, PdfRedactTextMode,
+};
 
 #[must_use]
 pub struct DocOperation<'a> {
