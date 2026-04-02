@@ -3,7 +3,7 @@
 /* Page */
 fz_rect mupdf_bound_page(fz_context *ctx, fz_page *page, mupdf_error_t **errptr)
 {
-    TRY_CATCH(fz_rect, {}, fz_bound_page(ctx, page));
+    TRY_CATCH(fz_rect, {0}, fz_bound_page(ctx, page));
 }
 
 fz_pixmap *mupdf_page_to_pixmap(fz_context *ctx, fz_page *page, fz_matrix ctm, fz_colorspace *cs, bool alpha, bool show_extras, mupdf_error_t **errptr)

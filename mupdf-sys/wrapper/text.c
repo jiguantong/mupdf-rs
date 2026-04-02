@@ -41,5 +41,5 @@ fz_stroke_state *mupdf_new_stroke_state(
 
 fz_rect mupdf_bound_text(fz_context *ctx, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm, mupdf_error_t **errptr)
 {
-    TRY_CATCH(fz_rect, {}, fz_bound_text(ctx, text, stroke, ctm));
+    TRY_CATCH(fz_rect, {0}, fz_bound_text(ctx, text, stroke, ctm));
 }
