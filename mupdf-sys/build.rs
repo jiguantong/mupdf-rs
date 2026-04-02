@@ -134,6 +134,9 @@ fn build_wrapper(target: &Target) -> Result<()> {
     if target.os == "android" {
         build.define("HAVE_ANDROID", None);
     }
+    if cfg!(feature = "tesseract") {
+        build.define("HAVE_TESSERACT", None);
+    }
     build.try_compile("mupdf-wrapper")?;
     Ok(())
 }
@@ -301,6 +304,7 @@ impl Build {
         self.fz_enable("HTML", cfg!(feature = "html"));
         self.fz_enable("EPUB", cfg!(feature = "epub"));
         self.fz_enable("JS", cfg!(feature = "js"));
+        self.fz_enable("OCR_OUTPUT", cfg!(feature = "tesseract"));
 
         for font in &FONTS {
             // TOFU flags skip fonts when set to 1

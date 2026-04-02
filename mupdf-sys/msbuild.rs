@@ -95,6 +95,16 @@ impl Msbuild {
         Ok(())
     }
 
+    fn native_configuration(&self) -> &'static str {
+        // Keep MuPDF on the release CRT even for Rust dev builds.
+        //
+        // This crate links into a Rust dependency graph that already pulls in
+        // release-CRT native libraries on Windows (for example via clipper-sys).
+        // Building MuPDF with the Debug CRT causes LNK2038 mismatches on
+        // RuntimeLibrary / _ITERATOR_DEBUG_LEVEL during final linking.
+        "Release"
+    }
+
     pub fn build(mut self, target: &Target, build_dir: &str) -> Result<()> {
         self.cl.push("/MP".to_owned());
 
@@ -105,11 +115,7 @@ impl Msbuild {
             self.remove_libresources_fonts(build_dir)?;
         }
 
-        let configuration = if target.debug_profile() {
-            "Debug"
-        } else {
-            "Release"
-        };
+        let configuration = self.native_configuration();
 
         let platform = match &*target.arch {
             "i386" | "i586" | "i686" => "Win32",
@@ -157,12 +163,6 @@ impl Msbuild {
             );
         } else {
             println!("cargo:rustc-link-search=native={build_dir}/platform/win32/{configuration}");
-        }
-
-        if configuration == "Debug" {
-            println!("cargo:rustc-link-lib=dylib=ucrtd");
-            println!("cargo:rustc-link-lib=dylib=vcruntimed");
-            println!("cargo:rustc-link-lib=dylib=msvcrtd");
         }
 
         println!("cargo:rustc-link-lib=dylib=libmupdf");
