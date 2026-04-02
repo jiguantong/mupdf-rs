@@ -604,7 +604,10 @@ impl TryFrom<Page> for PdfPage {
 #[cfg(test)]
 mod test {
     use crate::document::test_document;
-    use crate::pdf::{PdfAnnotation, PdfDocument, PdfPage};
+    use crate::pdf::{
+        PdfAnnotation, PdfDocument, PdfPage, PdfRedactImageMethod, PdfRedactLineArtMode,
+        PdfRedactOptions, PdfRedactTextMode,
+    };
     use crate::{Matrix, Rect};
 
     #[test]
@@ -645,5 +648,14 @@ mod test {
         let page0 = PdfPage::try_from(doc.load_page(0).unwrap()).unwrap();
         let annots: Vec<PdfAnnotation> = page0.annotations().collect();
         assert_eq!(annots.len(), 0);
+    }
+
+    #[test]
+    fn test_redact_options_default_is_secure_black_box() {
+        let options = PdfRedactOptions::default();
+        assert!(options.black_boxes);
+        assert_eq!(options.image_method, PdfRedactImageMethod::Pixels);
+        assert_eq!(options.line_art, PdfRedactLineArtMode::RemoveIfTouched);
+        assert_eq!(options.text, PdfRedactTextMode::Remove);
     }
 }
