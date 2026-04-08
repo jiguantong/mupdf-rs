@@ -183,7 +183,7 @@ fz_location mupdf_resolve_link(fz_context *ctx, fz_document *doc, const char *ur
 
 fz_link_dest mupdf_resolve_link_dest(fz_context *ctx, fz_document *doc, const char *uri, mupdf_error_t **errptr)
 {
-    TRY_CATCH(fz_link_dest, {}, fz_resolve_link_dest(ctx, doc, uri));
+    TRY_CATCH(fz_link_dest, {0}, fz_resolve_link_dest(ctx, doc, uri));
 }
 
 fz_colorspace *mupdf_document_output_intent(fz_context *ctx, fz_document *doc, mupdf_error_t **errptr)
