@@ -207,11 +207,9 @@ impl Msbuild {
         // the ones whose Cargo feature is disabled (see `exclude_disabled_features`).
         self.exclude_disabled_features(build_dir)?;
 
-        let configuration = if target.debug_profile() {
-            "Debug"
-        } else {
-            "Release"
-        };
+        // Rust 和应用中的其他原生库使用 Release CRT；即使 dev 构建也保持一致，
+        // 避免混用 Debug CRT 导致 RuntimeLibrary / _ITERATOR_DEBUG_LEVEL 链接冲突。
+        let configuration = "Release";
 
         let platform = match &*target.arch {
             "i386" | "i586" | "i686" => "Win32",
@@ -272,12 +270,6 @@ impl Msbuild {
             );
         } else {
             println!("cargo:rustc-link-search=native={build_dir}/platform/win32/{configuration}");
-        }
-
-        if configuration == "Debug" {
-            println!("cargo:rustc-link-lib=dylib=ucrtd");
-            println!("cargo:rustc-link-lib=dylib=vcruntimed");
-            println!("cargo:rustc-link-lib=dylib=msvcrtd");
         }
 
         println!("cargo:rustc-link-lib=dylib=libmupdf");

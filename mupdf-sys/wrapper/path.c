@@ -58,7 +58,7 @@ void mupdf_transform_path(fz_context *ctx, fz_path *path, fz_matrix ctm, mupdf_e
 
 fz_rect mupdf_bound_path(fz_context *ctx, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm, mupdf_error_t **errptr)
 {
-    TRY_CATCH(fz_rect, {}, fz_bound_path(ctx, path, stroke, ctm));
+    TRY_CATCH(fz_rect, {0}, fz_bound_path(ctx, path, stroke, ctm));
 }
 
 void mupdf_walk_path(fz_context *ctx, const fz_path *path, const fz_path_walker *walker, void *arg, mupdf_error_t **errptr)
