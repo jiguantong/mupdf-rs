@@ -206,6 +206,34 @@ fn patch_mupdf_sources(build_dir: &Path) -> Result<()> {
         }
     }
 
+    // The text filter builds selection/highlight-style glyph boxes using
+    // fz_advance_glyph, which reads the embedded font's own metrics. Some subset
+    // fonts report zero hmtx advances for ordinary glyphs even though the PDF
+    // supplies positive widths (/W, /Widths). The box then collapses to the glyph
+    // origin, making redaction at its edges sensitive to floating-point rounding.
+    // When the font advance is non-positive, use the positive PDF advance already
+    // computed by pdf_tos_make_trm. Preserve the existing box calculation for
+    // positive font advances; zero-width glyphs remain unchanged when their PDF
+    // advance is also zero.
+    let path = build_dir.join("source/pdf/pdf-op-filter.c");
+    let mut source =
+        fs::read_to_string(&path).map_err(|e| format!("Unable to read {}: {e}", path.display()))?;
+    source = source.replace("\r\n", "\n");
+    let old = "\t\t\tbbox.x1 = fz_advance_glyph(ctx, fontdesc->font, p->tos.gid, 0);\n";
+    let new = "\t\t\tbbox.x1 = fz_advance_glyph(ctx, fontdesc->font, p->tos.gid, 0);\n\t\t\tif (bbox.x1 <= 0 && adv > 0)\n\t\t\t\tbbox.x1 = adv;\n";
+    if !source.contains(new) {
+        if source.contains(old) {
+            source = source.replacen(old, new, 1);
+            fs::write(&path, source)
+                .map_err(|e| format!("Unable to write {}: {e}", path.display()))?;
+        } else {
+            println!(
+                "cargo:warning=Unable to patch redaction glyph width in {}; expected MuPDF filter snippet was not found",
+                path.display()
+            );
+        }
+    }
+
     Ok(())
 }
 
