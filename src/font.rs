@@ -149,6 +149,11 @@ impl Font {
         unsafe { fz_font_is_serif(context(), self.inner) > 0 }
     }
 
+    pub fn is_type3(&self) -> bool {
+        // PDF 关闭时会清空 t3procs，t3lists 则随字体对象释放。
+        unsafe { !(*self.inner).t3lists.is_null() }
+    }
+
     pub fn ascender(&self) -> f32 {
         unsafe { fz_font_ascender(context(), self.inner) }
     }

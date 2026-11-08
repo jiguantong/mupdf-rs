@@ -1,6 +1,22 @@
 use mupdf::pdf::{PdfDocument, PdfObject};
 use mupdf::{Error, TextPageFlags};
 
+#[test]
+fn test_type3_font_outlives_pdf() {
+    let font = {
+        let doc = PdfDocument::from_copied_bytes(include_bytes!("files/type3-font.pdf")).unwrap();
+        let page = doc.load_page(0).unwrap();
+        let text_page = page.to_text_page(TextPageFlags::empty()).unwrap();
+        let block = text_page.blocks().next().unwrap();
+        let line = block.lines().next().unwrap();
+        let font = line.chars().next().unwrap().font().unwrap();
+        assert!(font.is_type3());
+        font
+    };
+
+    assert!(font.is_type3(), "关闭 PDF 后仍应识别为 Type 3");
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 #[test]
 fn test_issue_16_pixmap_to_png() {
